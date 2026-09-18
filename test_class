@@ -1,0 +1,194 @@
+class fifo_test;
+
+    fifo_env env_h;
+
+
+    virtual fifo_if.WRITE_DRV_MP wr_drv_if;
+    virtual fifo_if.WRITE_MON_MP wr_mon_if;
+
+    virtual fifo_if.READ_DRV_MP rd_drv_if;
+    virtual fifo_if.READ_MON_MP rd_mon_if;
+
+
+    int data_value = 0;
+
+    function new(
+        virtual fifo_if.WRITE_DRV_MP wr_drv_if,
+        virtual fifo_if.WRITE_MON_MP wr_mon_if,
+        virtual fifo_if.READ_DRV_MP  rd_drv_if,
+        virtual fifo_if.READ_MON_MP  rd_mon_if
+    );
+
+        this.wr_drv_if = wr_drv_if;
+        this.wr_mon_if = wr_mon_if;
+
+        this.rd_drv_if = rd_drv_if;
+        this.rd_mon_if = rd_mon_if;
+
+
+        env_h = new(
+            wr_drv_if,
+            wr_mon_if,
+            rd_drv_if,
+            rd_mon_if,
+            0
+        );
+
+    endfunction
+
+
+    task send_transaction(
+        bit wr_en,
+        bit rd_en,
+        bit [7:0] data_in
+    );
+
+        fifo_trans trans;
+
+        trans = new();
+
+        trans.wr_en   = wr_en;
+        trans.rd_en   = rd_en;
+        trans.data_in = data_in;
+
+
+        // Same transaction to both drivers
+
+        env_h.gen2wr.put(trans.copy());
+
+        env_h.gen2rd.put(trans.copy());
+
+    endtask
+
+
+    task run();
+
+        env_h.build();
+
+        env_h.run_corner();
+
+
+        $display("\n============================================");
+        $display("TEST 1 : READ WHILE EMPTY");
+        $display("============================================");
+
+        send_transaction(
+            0,
+            1,
+            0
+        );
+
+
+        $display("\n============================================");
+        $display("TEST 2 : FIRST WRITE");
+        $display("============================================");
+
+        send_transaction(
+            1,
+            0,
+            8'h11
+        );
+
+
+        $display("\n============================================");
+        $display("TEST 3 : SINGLE READ");
+        $display("============================================");
+
+        send_transaction(
+            0,
+            1,
+            0
+        );
+
+
+        $display("\n============================================");
+        $display("TEST 4 : FILL FIFO TO FULL");
+        $display("============================================");
+
+        for (int i = 0; i < 16; i++) begin
+
+            send_transaction(
+                1,
+                0,
+                i + 1
+            );
+
+        end
+
+
+        $display("\n============================================");
+        $display("TEST 5 : WRITE WHILE FULL");
+        $display("============================================");
+
+        send_transaction(
+            1,
+            0,
+            8'hAA
+        );
+
+        $display("\n============================================");
+        $display("TEST 6 : READ FROM FULL FIFO");
+        $display("============================================");
+
+        send_transaction(
+            0,
+            1,
+            0
+        );
+
+        $display("\n============================================");
+        $display("TEST 7 : SIMULTANEOUS READ + WRITE");
+        $display("============================================");
+
+        for (int i = 0; i < 8; i++) begin
+
+            send_transaction(
+                1,
+                1,
+                8'h80 + i
+            );
+
+        end
+
+
+        $display("\n============================================");
+        $display("TEST 8 : DRAIN FIFO");
+        $display("============================================");
+
+        for (int i = 0; i < 16; i++) begin
+
+            send_transaction(
+                0,
+                1,
+                0
+            );
+
+        end
+
+        $display("\n============================================");
+        $display("TEST 9 : READ EMPTY FIFO AGAIN");
+        $display("============================================");
+
+        send_transaction(
+            0,
+            1,
+            0
+        );
+
+        $display("\n============================================");
+        $display("TEST 10 : ALL OPERATION COMBINATIONS");
+        $display("============================================");
+
+        send_transaction(0,0,0);
+        send_transaction(0,1,0);
+        send_transaction(1,0,8'h55);
+        send_transaction(1,1,8'h66);
+
+        #(1000);
+
+
+        env_h.report();
+
+    endtask
+
+endclass
