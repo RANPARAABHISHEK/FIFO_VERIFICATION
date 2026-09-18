@@ -1,0 +1,83 @@
+class ref_model;
+
+    mailbox #(fifo_trans) wr2rfm;
+
+    mailbox #(fifo_trans) rd2rfm;
+
+    mailbox #(fifo_trans) rfm2sb;
+
+
+    fifo_trans wr_data;
+
+    fifo_trans rd_data;
+
+    fifo_trans expected_data;
+
+
+    logic [7:0] ref_fifo[$];
+
+
+    function new(
+        mailbox #(fifo_trans) wr2rfm,
+        mailbox #(fifo_trans) rd2rfm,
+        mailbox #(fifo_trans) rfm2sb
+    );
+
+        this.wr2rfm = wr2rfm;
+
+        this.rd2rfm = rd2rfm;
+
+        this.rfm2sb = rfm2sb;
+
+    endfunction
+
+
+    task start();
+
+        fork
+            begin
+
+                forever begin
+
+                    wr2rfm.get(wr_data);
+
+                    if (wr_data.wr_en) begin
+
+                        ref_fifo.push_back(wr_data.data_in);
+
+                    end
+
+                end
+
+            end
+            begin
+
+                forever begin
+
+                    rd2rfm.get(rd_data);
+
+                    if (rd_data.rd_en) begin
+
+                        if (ref_fifo.size() > 0) begin
+
+                            expected_data = new();
+
+                            expected_data.data_out =
+                                ref_fifo.pop_front();
+
+                            rfm2sb.put( expected_data);
+
+                        end
+
+                    end
+
+                end
+
+            end
+
+        join_none
+
+    endtask
+
+endclass
+
