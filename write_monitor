@@ -1,0 +1,63 @@
+class write_mon;
+
+    virtual fifo_if.WRITE_MON_MP wr_mon_if;
+
+    mailbox #(fifo_trans) mon2rfm;
+
+    fifo_trans wr_data;
+
+
+    function new(
+        virtual fifo_if.WRITE_MON_MP wr_mon_if,
+        mailbox #(fifo_trans) mon2rfm
+    );
+
+        this.wr_mon_if = wr_mon_if;
+
+        this.mon2rfm = mon2rfm;
+
+        wr_data = new();
+
+    endfunction
+
+
+    task monitor();
+
+        @(wr_mon_if.write_mon_cb);
+
+        if (wr_mon_if.write_mon_cb.wr_en &&
+            !wr_mon_if.write_mon_cb.full) begin
+
+            wr_data = new();
+
+            wr_data.wr_en = 1;
+
+            wr_data.data_in =
+                wr_mon_if.write_mon_cb.data_in;
+
+            wr_data.full =
+                wr_mon_if.write_mon_cb.full;
+
+            mon2rfm.put(wr_data);
+
+        end
+
+    endtask
+
+
+    task start();
+
+        fork
+
+            forever begin
+
+                monitor();
+
+            end
+
+        join_none
+
+    endtask
+
+endclass
+
