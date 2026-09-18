@@ -1,0 +1,85 @@
+class fifo_trans;
+
+    parameter data_width = 8;
+
+    rand bit wr_en;
+    rand bit rd_en;
+
+    rand bit [data_width-1:0] data_in;
+
+    bit [data_width-1:0] data_out;
+
+    bit full;
+    bit empty;
+
+
+    static int trans_id = 0;
+
+    static int no_of_write_trans = 0;
+
+    static int no_of_read_trans = 0;
+
+
+    constraint valid_data {
+
+        data_in inside {[0:(2**data_width)-1]};
+
+    }
+
+
+    constraint valid_operation {
+
+        wr_en dist {1 := 50, 0 := 50};
+
+        rd_en dist {1 := 50, 0 := 50};
+
+    }
+
+
+    function void post_randomize();
+
+        trans_id++;
+
+        if (wr_en)
+            no_of_write_trans++;
+
+        if (rd_en)
+            no_of_read_trans++;
+
+    endfunction
+
+
+    function fifo_trans copy();
+
+        fifo_trans temp;
+
+        temp = new();
+
+        temp.wr_en    = this.wr_en;
+        temp.rd_en    = this.rd_en;
+        temp.data_in  = this.data_in;
+        temp.data_out = this.data_out;
+        temp.full     = this.full;
+        temp.empty    = this.empty;
+
+        return temp;
+
+    endfunction
+
+
+    function void display(string msg);
+
+        $display("--------------------------------------------");
+        $display("%s", msg);
+        $display("Transaction ID = %0d", trans_id);
+        $display("wr_en          = %0d", wr_en);
+        $display("rd_en          = %0d", rd_en);
+        $display("data_in        = %0d", data_in);
+        $display("data_out       = %0d", data_out);
+        $display("full           = %0d", full);
+        $display("empty          = %0d", empty);
+        $display("--------------------------------------------");
+
+    endfunction
+
+endclass
