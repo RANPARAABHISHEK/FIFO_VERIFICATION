@@ -1,0 +1,137 @@
+class fifo_env;
+
+ 
+    mailbox #(fifo_trans) gen2wr;
+    mailbox #(fifo_trans) gen2rd;
+
+    mailbox #(fifo_trans) wr2rfm;
+    mailbox #(fifo_trans) rd2rfm;
+
+    mailbox #(fifo_trans) rfm2sb;
+    mailbox #(fifo_trans) mon2sb;
+
+
+    write_drv  wr_drv;
+    read_drv   rd_drv;
+
+    write_mon  wr_mon;
+    read_mon   rd_mon;
+
+    ref_model  rfm;
+    fifo_sb    sb;
+
+
+    int no_of_transaction;
+
+    virtual fifo_if.WRITE_DRV_MP wr_drv_if;
+    virtual fifo_if.WRITE_MON_MP wr_mon_if;
+
+    virtual fifo_if.READ_DRV_MP  rd_drv_if;
+    virtual fifo_if.READ_MON_MP  rd_mon_if;
+
+    function new(
+        virtual fifo_if.WRITE_DRV_MP wr_drv_if,
+        virtual fifo_if.WRITE_MON_MP wr_mon_if,
+        virtual fifo_if.READ_DRV_MP  rd_drv_if,
+        virtual fifo_if.READ_MON_MP  rd_mon_if,
+
+        int no_of_transaction
+    );
+
+        this.wr_drv_if = wr_drv_if;
+        this.wr_mon_if = wr_mon_if;
+
+        this.rd_drv_if = rd_drv_if;
+        this.rd_mon_if = rd_mon_if;
+
+        this.no_of_transaction = no_of_transaction;
+
+    endfunction
+
+
+    function void build();
+
+        gen2wr = new();
+        gen2rd = new();
+
+        wr2rfm = new();
+        rd2rfm = new();
+
+        rfm2sb = new();
+        mon2sb = new();
+
+
+ 
+        wr_drv = new(
+            wr_drv_if,
+            gen2wr
+        );
+
+        rd_drv = new(
+            rd_drv_if,
+            gen2rd
+        );
+
+
+        wr_mon = new(
+            wr_mon_if,
+            wr2rfm
+        );
+
+
+        rd_mon = new(
+            rd_mon_if,
+            rd2rfm,
+            mon2sb
+        );
+
+
+        rfm = new(
+            wr2rfm,
+            rd2rfm,
+            rfm2sb
+        );
+
+        sb = new(
+            rfm2sb,
+            mon2sb,
+            wr_mon_if,
+            rd_mon_if
+        );
+
+
+        $display("\nENVIRONMENT BUILD COMPLETE\n");
+
+    endfunction
+
+
+    task start_components();
+
+        wr_drv.start();
+
+        rd_drv.start();
+
+        wr_mon.start();
+
+        rd_mon.start();
+
+        rfm.start();
+
+        sb.start();
+
+    endtask
+
+    task run_corner();
+
+        start_components();
+
+    endtask
+
+
+    task report();
+
+        sb.report();
+
+    endtask
+
+endclass
