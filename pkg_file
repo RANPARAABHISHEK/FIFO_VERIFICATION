@@ -1,0 +1,21 @@
+package fifo_pkg;
+
+	parameter data_width=8;
+	parameter depth=16;
+	parameter add_width=4;
+
+	int no_of_transaction = 1;
+
+	`include "fifo_trans.sv"
+	`include "fifo_gen.sv"
+	`include "write_drv.sv"
+	`include "read_drv.sv"
+	`include "write_mon.sv"
+	`include "read_mon.sv"
+	`include "ref_model.sv"
+	`include "fifo_sb.sv"
+	`include "fifo_env.sv"
+	`include "test.sv"
+	
+	
+endpackage : fifo_pkg
