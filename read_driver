@@ -1,0 +1,53 @@
+class read_drv;
+
+    virtual fifo_if.READ_DRV_MP rd_drv_if;
+
+    mailbox #(fifo_trans) gen2rd;
+
+    fifo_trans data2duv;
+
+
+    function new(
+        virtual fifo_if.READ_DRV_MP rd_drv_if,
+        mailbox #(fifo_trans) gen2rd
+    );
+
+        this.rd_drv_if = rd_drv_if;
+
+        this.gen2rd = gen2rd;
+
+    endfunction
+
+
+    task drive();
+
+        @(rd_drv_if.read_drv_cb);
+
+        rd_drv_if.read_drv_cb.rd_en <= data2duv.rd_en;
+
+
+        @(rd_drv_if.read_drv_cb);
+
+        rd_drv_if.read_drv_cb.rd_en <= 0;
+
+
+    endtask
+
+
+    task start();
+
+        fork
+
+            forever begin
+
+                gen2rd.get(data2duv);
+
+                drive();
+
+            end
+
+        join_none
+
+    endtask
+
+endclass
