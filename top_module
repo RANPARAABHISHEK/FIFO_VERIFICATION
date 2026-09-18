@@ -1,0 +1,91 @@
+module top;
+
+	import fifo_pkg::*;
+
+    parameter data_width = 8;
+
+    logic clk;
+
+    fifo_if #(data_width) fifo_if_h(clk);
+  fifo_test test_h;
+
+
+
+    fifo #(
+        .data_width(data_width),
+        .depth(16),
+        .add_width(4)
+    ) DUT (
+
+        .clk      (clk),
+
+        .reset    (fifo_if_h.reset),
+
+        .wr_en    (fifo_if_h.wr_en),
+
+        .rd_en    (fifo_if_h.rd_en),
+
+        .data_in  (fifo_if_h.data_in),
+
+        .data_out (fifo_if_h.data_out),
+
+        .full     (fifo_if_h.full),
+
+        .empty    (fifo_if_h.empty)
+
+    );
+
+
+    initial begin
+
+        clk = 0;
+
+        forever #5 clk = ~clk;
+
+    end
+
+
+    initial begin
+
+        // Initial values
+
+        fifo_if_h.reset   = 1;
+
+        fifo_if_h.wr_en   = 0;
+
+        fifo_if_h.rd_en   = 0;
+
+        fifo_if_h.data_in = 0;
+
+
+        // Reset
+
+        repeat(2)
+            @(posedge clk);
+
+        fifo_if_h.reset = 0;
+
+
+        // Create test
+
+        test_h = new(
+            fifo_if_h,
+            fifo_if_h,
+            fifo_if_h,
+            fifo_if_h
+        );
+
+
+        // Run test
+
+        test_h.run();
+
+
+        #100;
+
+        $finish;
+
+    end
+
+
+endmodule
