@@ -1,0 +1,74 @@
+class read_mon;
+
+    virtual fifo_if.READ_MON_MP rd_mon_if;
+
+    mailbox #(fifo_trans) mon2rfm;
+
+    mailbox #(fifo_trans) mon2sb;
+
+    fifo_trans rd_data;
+
+    function new(
+        virtual fifo_if.READ_MON_MP rd_mon_if,
+        mailbox #(fifo_trans) mon2rfm,
+        mailbox #(fifo_trans) mon2sb
+    );
+
+        this.rd_mon_if = rd_mon_if;
+
+        this.mon2rfm = mon2rfm;
+
+        this.mon2sb = mon2sb;
+
+    endfunction
+
+
+    task monitor();
+
+        @(rd_mon_if.read_mon_cb);
+
+        if (rd_mon_if.read_mon_cb.rd_en &&
+            !rd_mon_if.read_mon_cb.empty) begin
+
+            rd_data = new();
+
+            rd_data.rd_en =
+                rd_mon_if.read_mon_cb.rd_en;
+
+            rd_data.data_out =
+                rd_mon_if.read_mon_cb.data_out;
+
+            rd_data.empty =
+                rd_mon_if.read_mon_cb.empty;
+
+
+            mon2rfm.put(rd_data);
+
+            mon2sb.put(rd_data);
+
+
+            $display(
+                "READ_MON : Read observed -> data_out=%0d",
+                rd_data.data_out
+            );
+
+        end
+
+    endtask
+
+
+    task start();
+
+        fork
+
+            forever begin
+
+                monitor();
+
+            end
+
+        join_none
+
+    endtask
+
+endclass
